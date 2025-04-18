@@ -91,3 +91,79 @@ grouped_summary = final_df.groupby(['GENDER', 'RACE']).size().reset_index(name='
 
 print("\nEchocardiogram frequency by gender and race:")
 print(grouped_summary)
+
+
+'''==========================MOST PREVALENT DATA WITHIN DATASETS============================'''
+
+
+df_conditions = pd.read_sql_query("SELECT DESCRIPTION FROM conditions", conn)
+top_conditions = df_conditions['DESCRIPTION'].value_counts().head(10)
+print("Top Diagnoses:\n", top_conditions)
+
+
+df_procedures = pd.read_sql_query("SELECT DESCRIPTION FROM procedures", conn)
+top_procedures = df_procedures['DESCRIPTION'].value_counts().head(10)
+print("\nTop Procedures:\n", top_procedures)
+
+
+df_imaging = pd.read_sql_query("SELECT MODALITY_DESCRIPTION, BODYSITE_DESCRIPTION FROM imaging_studies", conn)
+top_modalities = df_imaging['MODALITY_DESCRIPTION'].value_counts().head(5)
+top_body_parts = df_imaging['BODYSITE_DESCRIPTION'].value_counts().head(5)
+
+print("\nTop Imaging Modalities:\n", top_modalities)
+print("\nTop Imaged Body Parts:\n", top_body_parts)
+
+
+
+'''=============================================='''
+
+''' try and find the most prevalent data within the datasets that I already have in use '''
+
+
+sql1_query = """
+     SELECT p.GENDER, p.RACE, c.DESCRIPTION
+        FROM conditions c
+        JOIN patients p ON c.PATIENT = p.Id
+        WHERE LOWER(c.DESCRIPTION) LIKE '%hypertension%'
+        OR LOWER(c.DESCRIPTION) LIKE '%diabetes%'
+    """
+sql2_query = """
+    SELECT p.GENDER, p.RACE, i.MODALITY_DESCRIPTION
+    FROM imaging_studies i
+    JOIN patients p ON i.PATIENT = p.Id
+    WHERE LOWER(i.MODALITY_DESCRIPTION) LIKE '%ultrasound%'
+    """
+
+sql3_query = """
+     SELECT p.BIRTHDATE, c.START, c.DESCRIPTION
+        FROM conditions c
+        JOIN patients p ON c.PATIENT = p.Id
+        WHERE LOWER(c.DESCRIPTION) LIKE '%coronary%'
+           OR LOWER(c.DESCRIPTION) LIKE '%artery%'
+           OR LOWER(c.DESCRIPTION) LIKE '%heart disease%'
+           OR LOWER(c.DESCRIPTION) LIKE '%cad%'
+           OR LOWER(c.DESCRIPTION) LIKE '%atherosclerosis%'
+        """
+
+sql4_query = """
+    SELECT p.GENDER, pr.DESCRIPTION
+        FROM procedures pr
+        JOIN patients p ON pr.PATIENT = p.Id
+        WHERE LOWER(pr.DESCRIPTION) LIKE '%ct%'
+    """
+
+queries = {
+     "Hypertension & Diabetes by Gender and Race": sql1_query,
+    "Ultrasound Usage by Gender and Race": sql2_query,
+    "Coronary Diagnoses by Birth Decade": sql3_query,
+    "CT Usage by Gender": sql4_query
+}
+
+results = {}
+for title, query in queries.items():
+    df = pd.read_sql_query(query, conn)
+    results[title] = df
+    print(f"\n=========={title}========")
+    print(df.count())
+
+
